@@ -11,6 +11,8 @@ from sys import argv, exit, stderr, stdout, version_info
 
 from . repobrowsers import repobrowsers, LinkType as LT
 from . import git, version, utils
+import json
+import re
 
 
 #-----------------------------------------------------------------------------
@@ -74,16 +76,21 @@ def readopts(cmdargs=argv[1:]):
         exit(0)
 
     cfg = git.get_config('link')
+    cfg2 = git.get_config('remote.origin')
 
+    print(f"cfg2={json.dumps(cfg2)}")
     # command line options overrule git config options
-    opts.url = opts.url or cfg.get('url')
+    opts.url = opts.url or cfg.get('url') or cfg2.get('url')
     opts.browser = opts.browser or cfg.get('browser')
     opts.clipboard = opts.clipboard or cfg.get('clipboard')
     opts.short = opts.short or cfg.get('short')
 
+    if opts.url:
+        opts.url = re.sub(r'^git@github.com:(.*)\.git$','https://github.com/\\1',opts.url)
+
     errors = []
     if not opts.url:
-        msg = "repo browser url not - use 'git config link.url' or '-u, --url'"
+        msg = "repo browser url not set - use 'git config link.url' or '-u, --url'"
         errors.append(msg)
     if not opts.browser:
         msg = "repo browser type not set - use 'git config link.browser' or '-b, --browser'"
